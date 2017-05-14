@@ -1,28 +1,37 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var mongoose = require('mongoose');
+const express = require("express");
+const bodyParser = require("body-parser");
+const mongoose = require('mongoose');
+const morgan = require("morgan"); // for logging
 
-// import model
-var Book = require("./models/book");
+// mongo config
+const mgDBConfig = require("./mongoConfig");
+const port = process.env.port || 8080;
 
-var app = express();
+const app = express();
 
+app.use(morgan("dev"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-var port = process.env.port || 8080;
+app.set("jwt-secret", mgDBConfig.secret);
+
 
 // SET UP MONGOOSE
-var db = mongoose.connection;
+const db = mongoose.connection;
 db.on("error", console.error);
 db.once("open", () => {
   console.log("MongoDB connected!");
 })
 
-mongoose.connect("mongodb://localhost/mongodb_tutorial");
+mongoose.connect(mgDBConfig.mongodbUri);
 
-var router = require("./routes")(app, Book);
+app.get("/", (req, res) => {
+  res.send("HELLO JWT");
+});
+// app.use("/", require("./routes/book"));
+app.use("/api", require("./routes"));
 
-var server = app.listen(port, () => {
+
+const server = app.listen(port, () => {
   console.log("Server instance running on " + port + " port");
 });
